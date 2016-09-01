@@ -24,12 +24,9 @@
 	mov dword [bx + 0x08], 0x7c0001ff
 	mov dword [bx + 0x0c], 0x00409800
 
-	; Kernel data segment entry
-
-;TODO:
-	Display memory for TEST only
-	mov     dword [bx + 0x10], 0x8000ffff
-	mov     dword [bx + 0x14], 0x0040920b
+	;   Kernel data segment entry, Display memory for TEST only
+	mov dword [bx + 0x10], 0x8000ffff
+	mov dword [bx + 0x14], 0x0040920b
 
 	;   Kernel stack segment entry
 	mov dword [bx + 0x18], 0x00007a00
