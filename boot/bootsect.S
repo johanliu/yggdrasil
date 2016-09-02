@@ -1,7 +1,7 @@
 	BOOTSEG  equ 0x7c00
 	GDTLIMIT equ 31
 
-	SECTION mbr align=16 vstart=0x7c00
+	SECTION mbr align=16 vstart=BOOTSEG
 
 	mov ax, cs
 	mov ss, ax
@@ -10,7 +10,6 @@
 	;   Setup GDT in real mode, transfer linear address to logical address
 	mov ax, [cs:gdt_base]
 	mov dx, [cs:gdt_base + 0x02]
-
 	mov bx, 16; >>4
 	div bx
 	mov ds, ax
@@ -22,7 +21,8 @@
 
 	;   Kernel code segment entry
 	mov dword [bx + 0x08], 0x7c0001ff
-	mov dword [bx + 0x0c], 0x00409800
+	;   mov dword [bx + 0x0c], 0x00409800
+	mov dword [bx + 0x0c], 0x00409a00
 
 	;   Kernel data segment entry, Display memory for TEST only
 	mov dword [bx + 0x10], 0x8000ffff
@@ -49,7 +49,7 @@
 	mov cr0, eax
 
 	;   Jump to protected mode, refresh register and pipeline
-	jmp dword 0x0008:flush
+	jmp dword 0x0008:flush - BOOTSEG
 
 [bits 32]
 
@@ -57,18 +57,34 @@ flush:
 	;   Get Kernel data entry
 	mov cx, 0x0010
 	mov ds, cx
+	xor cx, cx
 
-	mov byte [0x00], 'H'
-	mov byte [0x02], 'e'
-	mov byte [0x04], 'l'
-	mov byte [0x06], 'l'
-	mov byte [0x08], 'o'
+	mov cx, message_end - message
+	mov bx, message - BOOTSEG
+
+	xor ax, ax
+	mov si, 0x00
+
+	; For display, In order to read from code segment, set TYPE 1010
+
+.display:
+	mov  byte al, [cs:bx]
+	mov  byte [si], al
+	inc  si
+	mov  byte [si], 0x07
+	inc  si
+	inc  bx
+	loop .display
 
 	; Halt the computer
 	hlt
 
 	gdt_size dw 0
-	gdt_base dw 0x00007e00
+	gdt_base dd 0x00007e00
+
+	message db 'Hello, Protected Mode!'
+
+message_end:
 
 	times 510 - ($ - $$) db 0
-	db    0xaa55
+	dw    0xaa55
