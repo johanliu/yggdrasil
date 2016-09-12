@@ -31,7 +31,7 @@ SECTION mbr align=16 vstart=BOOTSEG
 		mov dword [ebx + 0x10], 0x8000ffff     ; Base = 0, Limit = 0xFFFFF, DPL = 00
 		mov dword [ebx + 0x14], 0x00cf9200     ; 4K Size, Data Segment, UP
 
-		mov  word [cs:gdt_size], GDTLIMIT     ; Save GDT size
+		mov  word [cs:gdt_size], SIZEOFGDT     ; Save GDT size
 
 		lgdt [cs:gdt_size]
 
@@ -70,7 +70,7 @@ flush:
 	; Load Kernel into mem
 
 page:
-		mov ebx, KERNEL_PDT_ADDRESS    ; The physical address of kernel PDT
+		mov ebx, KERNEL_PDT_PHY_ADDRESS    ; The physical address of kernel PDT
 
 	; Set physical address of PDT to last entry of itself in order to operate later
 		mov dword [ebx + 0xFFC], 0x00020003   ; P = 1, RW = 1, US = 0
@@ -80,7 +80,7 @@ page:
 		mov dword [ebx + 0x800], edx   ; The corresponding global address of kernel PT
 
 	; Now, let's map kernel physical memory address to first PT
-		mov ebx, KERNEL_FIRST_PT
+		mov ebx, KERNEL_PT_PHY_ADDRESS
 		xor eax, eax
 		xor esi, esi
 
@@ -94,7 +94,7 @@ page:
 		jl .p1
 
 	; Set first PDBR 
-		mov eax, KERNEL_PDT_ADDRESS    ; PCD = 0, PWD = 0
+		mov eax, KERNEL_PDT_PHY_ADDRESS    ; PCD = 0, PWD = 0
 		mov cr3, eax
 
 	; Reallocate GDT to global private address because we might flush lower private
@@ -129,7 +129,7 @@ page:
 		loop .display
 	
 	; Jump to Kernel main entry
-		jmp [0x80040004]
+		jmp [KERNEL_START_LINEAR_ADDRESS + 4]
 
 		gdt_size dw 0
 		gdt_base dd 0x00008000     ; Allign on 4k page
